@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 
+import java.net.http.HttpClient;
 import java.util.Base64;
 import java.util.concurrent.*;
 
@@ -29,6 +30,14 @@ public class MainConfiguration {
     @Bean
     public ExecutorService rabbitMQExecutor() {
         return createExecutorService();
+    }
+
+    @Bean
+    public HttpClient httpClient() {
+        return HttpClient
+                .newBuilder()
+                .executor(createExecutorService())
+                .build();
     }
 
     private ExecutorService createExecutorService() {
