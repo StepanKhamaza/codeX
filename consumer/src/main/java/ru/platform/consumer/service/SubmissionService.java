@@ -49,7 +49,6 @@ public class SubmissionService {
 
     public SubmissionResult execute(Submission submission, Problem problem) {
         Map<String, JudgeSubmission[]> transformFuture = transformData.transform(submission, problem);
-        SubmissionResult testingFuture = testingSubmission.submit(transformFuture);
-        return testingFuture;
+        return testingSubmission.submit(transformFuture);
     }
 }

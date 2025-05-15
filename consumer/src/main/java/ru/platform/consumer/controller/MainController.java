@@ -15,7 +15,7 @@ import java.util.concurrent.ExecutorService;
 @Component
 public class MainController {
     private final SubmissionService submissionService;
-    private final ExecutorService rabbitMQService;
+    private final ExecutorService rabbitMQExecutor;
 
     @Value("${app.judge-url-post}")
     private String judgeUrlPost;
@@ -23,15 +23,15 @@ public class MainController {
     @Value("${app.judge-url-get}")
     private String judgeUrlGet;
 
-    public MainController(SubmissionService submissionService, @Qualifier("rabbitMQExecutor") ExecutorService rabbitMQService) {
+    public MainController(SubmissionService submissionService, @Qualifier("rabbitMQExecutor") ExecutorService rabbitMQExecutor) {
         this.submissionService = submissionService;
-        this.rabbitMQService = rabbitMQService;
+        this.rabbitMQExecutor = rabbitMQExecutor;
     }
 
     @RabbitListener(queues = "${app.queue-name}")
     public void processMessage(Submission submission) {
         CompletableFuture.runAsync(() -> {
             submissionService.executeAndSave(submission);
-        }, rabbitMQService);
+        }, rabbitMQExecutor);
     }
 }
