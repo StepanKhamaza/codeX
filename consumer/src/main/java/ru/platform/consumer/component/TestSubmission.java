@@ -22,7 +22,7 @@ import java.util.concurrent.*;
 
 @Component
 @Slf4j
-public class TestingSubmission {
+public class TestSubmission {
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
     private final SubmissionResult INTERNAL_ERROR_RESULT = SubmissionResult
@@ -36,16 +36,16 @@ public class TestingSubmission {
     @Value("${app.judge-url-get}")
     private String judgeUrlGet;
 
-    public TestingSubmission(ObjectMapper objectMapper, @Qualifier("httpClient") HttpClient httpClient) {
+    public TestSubmission(ObjectMapper objectMapper, @Qualifier("httpClient") HttpClient httpClient) {
         this.objectMapper = objectMapper;
         this.httpClient = httpClient;
     }
 
-    public SubmissionResult submit(Map<String, JudgeSubmission[]> submissions) {
+    public SubmissionResult submit(JudgeSubmission judgeSubmission) {
         HttpResponse<String> postMethodResponse = null;
         try {
             do {
-                postMethodResponse = postMethod(submissions).get();
+                postMethodResponse = postMethod(judgeSubmission).get();
             } while (postMethodResponse == null ||
                     postMethodResponse.statusCode() == HttpStatus.SERVICE_UNAVAILABLE.value());
         } catch (InterruptedException | ExecutionException e) {
@@ -54,41 +54,41 @@ public class TestingSubmission {
         }
 
         if (postMethodResponse.statusCode() != HttpStatus.CREATED.value()) {
+            log.error("{} {}", postMethodResponse.statusCode(), postMethodResponse.body());
             return INTERNAL_ERROR_RESULT;
         }
 
-        float maxTime = 0.0f, maxMemory = 0.0f;
+        float time = 0.0f, memory = 0.0f;
         try {
-            Map<String, String>[] responseMap = objectMapper.readValue(postMethodResponse.body(), Map[].class);
-            for (int i = 0; i < responseMap.length; i++) {
-                String token = responseMap[i].get("token");
+            Map<String, String> responseMap = objectMapper.readValue(postMethodResponse.body(), Map.class);
+            String token = responseMap.get("token");
+            while (true) {
                 HttpResponse<String> getMethodResponse = getMethod(token).get();
-
                 if (getMethodResponse.statusCode() != HttpStatus.OK.value()) {
+                    log.error("{} {}", getMethodResponse.statusCode(), getMethodResponse.body());
                     return INTERNAL_ERROR_RESULT;
                 }
 
                 JudgeResponse submissionResponse = objectMapper.readValue(getMethodResponse.body(), JudgeResponse.class);
                 Integer id = submissionResponse.getStatus().getId();
-                if (id.equals(SubmissionStatus.IN_QUEUE.getId()) ||
-                        id.equals(SubmissionStatus.PROCESSING.getId())) {
+                if (!id.equals(SubmissionStatus.IN_QUEUE.getId()) &&
+                        !id.equals(SubmissionStatus.PROCESSING.getId())) {
 
-                    i--;
-                } else {
                     if (!id.equals(SubmissionStatus.ACCEPTED.getId())) {
                         return SubmissionResult
                                 .builder()
                                 .status(SubmissionStatus.of(id))
                                 .time(submissionResponse.getTime())
                                 .memory(submissionResponse.getMemory())
-                                .numberOfTestcase(i + 1)
                                 .build();
                     } else {
-                        maxTime = Math.max(maxTime, submissionResponse.getTime());
-                        maxMemory = Math.max(maxMemory, submissionResponse.getMemory());
+                        time = submissionResponse.getTime();
+                        memory = submissionResponse.getMemory();
                     }
+                    break;
                 }
             }
+
         } catch (JsonProcessingException | ExecutionException | InterruptedException e) {
             log.error(e.getMessage(), e);
             return INTERNAL_ERROR_RESULT;
@@ -97,19 +97,19 @@ public class TestingSubmission {
         return SubmissionResult
                 .builder()
                 .status(SubmissionStatus.ACCEPTED)
-                .time(maxTime)
-                .memory(maxMemory)
+                .time(time)
+                .memory(memory)
                 .build();
     }
 
-    public CompletableFuture<HttpResponse<String>> postMethod(Map<String, JudgeSubmission[]> submissions) {
+    public CompletableFuture<HttpResponse<String>> postMethod(JudgeSubmission submission) {
         HttpRequest request = null;
         try {
             request = HttpRequest
                     .newBuilder()
                     .uri(URI.create(judgeUrlPost))
                     .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofByteArray(objectMapper.writeValueAsBytes(submissions)))
+                    .POST(HttpRequest.BodyPublishers.ofByteArray(objectMapper.writeValueAsBytes(submission)))
                     .build();
         } catch (JsonProcessingException e) {
             log.error(e.getMessage(), e);

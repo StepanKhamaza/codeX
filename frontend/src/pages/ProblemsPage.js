@@ -27,22 +27,22 @@ function ProblemsPage() {
 
   useEffect(() => {
 
-    const fetchProblems = async () => {
-      setLoading(true);
-      setError('');
-      try {
-        const response = await axios.get(`${API_BASE_URL}/problems`);
-        setAllProblems(response.data.problems);
-        setTotalCount(response.data.totalCount);
-      } catch (error) {
-        console.error('Ошибка при загрузке задач:', error);
-        setError('Не удалось загрузить список задач.');
-      } finally {
-        setLoading(false);
-      }
-    };
+	const fetchProblems = async () => {
+	  setLoading(true);
+	  setError('');
+	  try {
+		const response = await axios.get(`${API_BASE_URL}/problems`);
+		setAllProblems(response.data.problems);
+		setTotalCount(response.data.totalCount);
+	  } catch (error) {
+		console.error('Ошибка при загрузке задач:', error);
+		setError('Не удалось загрузить список задач.');
+	  } finally {
+		setLoading(false);
+	  }
+	};
 
-    fetchProblems();
+	fetchProblems();
   }, []);
 
   const startIndex = (currentPage - 1) * PROBLEMS_PER_PAGE;
@@ -51,33 +51,33 @@ function ProblemsPage() {
   const totalPages = Math.ceil(allProblems.length / PROBLEMS_PER_PAGE);
 
   const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
+	setCurrentPage(pageNumber);
   };
 
   if (loading) {
-    return <Container>Загрузка списка задач...</Container>;
+	return <Container>Загрузка списка задач...</Container>;
   }
 
   if (error) {
-    return <Container>Ошибка: {error}</Container>;
+	return <Container>Ошибка: {error}</Container>;
   }
 
   return (
-    <Container>
-      <h1>Список задач</h1>
-      <ProblemsList>
-        {currentProblems.map((problem) => (
-          <ProblemItem key={problem.problemId} problem={problem} />
-        ))}
-      </ProblemsList>
-      {totalPages > 1 && (
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-        />
-      )}
-    </Container>
+	<Container>
+	  <h1>Список задач</h1>
+	  <ProblemsList>
+		{currentProblems.map((problem) => (
+		  <ProblemItem key={problem.problemId} problem={problem} />
+		))}
+	  </ProblemsList>
+	  {totalPages > 1 && (
+		<Pagination
+		  currentPage={currentPage}
+		  totalPages={totalPages}
+		  onPageChange={handlePageChange}
+		/>
+	  )}
+	</Container>
   );
 }
 

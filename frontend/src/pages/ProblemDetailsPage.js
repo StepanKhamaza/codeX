@@ -22,6 +22,23 @@ const ProblemInfoContainer = styled.div`
   border-radius: 5px;
 `;
 
+const HTMLContent = styled.div`
+  margin-bottom: 1rem;
+  color: #eee;
+  /* Add any styling you want for the HTML content */
+  & > p {
+    margin-bottom: 0.5rem; /* Example styling for paragraphs */
+  }
+  & > pre {
+    background-color: #222;
+    padding: 1rem;
+    border-radius: 5px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+  }
+  /* Add more styles for other HTML elements as needed */
+`;
+
 const LanguageSelector = styled.select`
   background-color: #444;
   color: #eee;
@@ -195,10 +212,10 @@ const LANGUAGES = [
 ];
 
 const compilerIdToLanguage = {
-    63: 'JavaScript',
-    54: 'C++',
-    62: 'Java',
-    71: 'Python',
+  63: 'JavaScript',
+  54: 'C++',
+  62: 'Java',
+  71: 'Python',
 };
 
 function ProblemDetailsPage() {
@@ -215,33 +232,33 @@ function ProblemDetailsPage() {
   const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [copySuccess, setCopySuccess] = useState('');
 
-    const fetchSubmissions = async () => {
-        const token = localStorage.getItem('jwtToken');
-        const username = localStorage.getItem('username');
+  const fetchSubmissions = async () => {
+    const token = localStorage.getItem('jwtToken');
+    const username = localStorage.getItem('username');
 
-        console.log('Токен:', token);
-        console.log('Имя пользователя из localStorage:', username);
-        console.log('API Base URL:', API_BASE_URL);
+    console.log('Токен:', token);
+    console.log('Имя пользователя из localStorage:', username);
+    console.log('API Base URL:', API_BASE_URL);
 
-        if (username && token && API_BASE_URL) {
-            const submissionsUrl = `${API_BASE_URL}/submission/get/${username}/${id}`;
-            console.log('URL запроса попыток:', submissionsUrl);
-            try {
-                const response = await axios.get(submissionsUrl, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                });
-                console.log('Данные о попытках от бэкенда:', response.data);
-                setSubmissions(response.data.submissions);
-                console.log('Состояние submissions после установки:', submissions);
-            } catch (error) {
-                console.error('Ошибка при загрузке предыдущих попыток:', error);
-            }
-        } else {
-            console.log('API Base URL не определен или отсутствует токен/имя пользователя.');
-        }
-    };
+    if (username && token && API_BASE_URL) {
+      const submissionsUrl = `${API_BASE_URL}/submission/get/${username}/${id}`;
+      console.log('URL запроса попыток:', submissionsUrl);
+      try {
+        const response = await axios.get(submissionsUrl, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        console.log('Данные о попытках от бэкенда:', response.data);
+        setSubmissions(response.data.submissions);
+        console.log('Состояние submissions после установки:', submissions);
+      } catch (error) {
+        console.error('Ошибка при загрузке предыдущих попыток:', error);
+      }
+    } else {
+      console.log('API Base URL не определен или отсутствует токен/имя пользователя.');
+    }
+  };
 
   useEffect(() => {
     const fetchProblemDetails = async () => {
@@ -294,85 +311,87 @@ function ProblemDetailsPage() {
     setCode('');
   };
 
-    const handleSubmitSolution = async () => {
-        let sourceCode = code;
-        let submissionType = 'текста из редактора';
-        let selectedCompilerId;
+  const handleSubmitSolution = async () => {
+    let sourceCode = code;
+    let submissionType = 'текста из редактора';
+    let selectedCompilerId;
 
-        const selectedLangObject = LANGUAGES.find(lang => lang.value === selectedLanguage);
-        const expectedExtension = selectedLangObject ? selectedLangObject.extension : '';
+    const selectedLangObject = LANGUAGES.find((lang) => lang.value === selectedLanguage);
+    const expectedExtension = selectedLangObject ? selectedLangObject.extension : '';
 
-        if (selectedFile) {
-            if (selectedFile.name.endsWith(expectedExtension)) {
-                submissionType = `файла "${selectedFile.name}"`;
-                try {
-                    const fileContent = await readFileContent(selectedFile);
-                    sourceCode = fileContent;
-                } catch (error) {
-                    alert('Не удалось прочитать содержимое файла.');
-                    return;
-                }
-            } else {
-                alert(`Пожалуйста, выберите файл с расширением "${expectedExtension}" для языка "${selectedLangObject?.label}".`);
-                return;
-            }
-        } else if (!sourceCode.trim()) {
-            alert('Пожалуйста, введите код в редакторе или выберите файл.');
-            return;
+    if (selectedFile) {
+      if (selectedFile.name.endsWith(expectedExtension)) {
+        submissionType = `файла "${selectedFile.name}"`;
+        try {
+          const fileContent = await readFileContent(selectedFile);
+          sourceCode = fileContent;
+        } catch (error) {
+          alert('Не удалось прочитать содержимое файла.');
+          return;
         }
+      } else {
+        alert(
+          `Пожалуйста, выберите файл с расширением "${expectedExtension}" для языка "${selectedLangObject?.label}".`
+        );
+        return;
+      }
+    } else if (!sourceCode.trim()) {
+      alert('Пожалуйста, введите код в редакторе или выберите файл.');
+      return;
+    }
 
-        switch (selectedLanguage) {
-            case 'javascript':
-                selectedCompilerId = 63;
-                break;
-            case 'java':
-                selectedCompilerId = 62;
-                break;
-            case 'cpp':
-                selectedCompilerId = 54;
-                break;
-            case 'python':
-                selectedCompilerId = 71;
-                break;
-            default:
-                alert('Выбранный язык не поддерживается для отправки.');
-                return;
-        }
+    switch (selectedLanguage) {
+      case 'javascript':
+        selectedCompilerId = 63;
+        break;
+      case 'java':
+        selectedCompilerId = 62;
+        break;
+      case 'cpp':
+        selectedCompilerId = 54;
+        break;
+      case 'python':
+        selectedCompilerId = 71;
+        break;
+      default:
+        alert('Выбранный язык не поддерживается для отправки.');
+        return;
+    }
 
-        const submissionData = {
-            problemId: parseInt(id),
-            sourceCode: sourceCode,
-            compilerId: selectedCompilerId,
-        };
-
-        const token = localStorage.getItem('jwtToken');
-
-        if (API_BASE_URL) {
-            try {
-                const response = await axios.post(`${API_BASE_URL}/submission/${id}`, submissionData, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`,
-                    },
-                });
-                alert(`Решение успешно отправлено!`);
-                console.log(` Решение отправлено (${submissionType})!`);
-
-                fetchSubmissions();
-                setSelectedFile(null);
-                setCode('');
-                if (fileInputRef.current) {
-                    fileInputRef.current.value = '';
-                }
-            } catch (error) {
-                console.error('Ошибка при отправке решения:', error);
-                alert('Произошла ошибка при отправке решения.');
-            }
-        } else {
-            console.error('API Base URL не определен.');
-            alert('API Base URL не определен.');
-        }
+    const submissionData = {
+      problemId: parseInt(id),
+      sourceCode: sourceCode,
+      compilerId: selectedCompilerId,
     };
+
+    const token = localStorage.getItem('jwtToken');
+
+    if (API_BASE_URL) {
+      try {
+        const response = await axios.post(`${API_BASE_URL}/submission/${id}`, submissionData, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        alert(`Решение успешно отправлено!`);
+        console.log(` Решение отправлено (${submissionType})!`);
+
+        fetchSubmissions();
+        setSelectedFile(null);
+        setCode('');
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      } catch (error) {
+        console.error('Ошибка при отправке решения:', error);
+        alert('Произошла ошибка при отправке решения.');
+      }
+    } else {
+      console.error('API Base URL не определен.');
+      alert('API Base URL не определен.');
+    }
+  };
 
   const readFileContent = (file) => {
     return new Promise((resolve, reject) => {
@@ -388,34 +407,36 @@ function ProblemDetailsPage() {
   };
 
   const openCodeModal = (submissionId) => {
-        const submission = submissions.find((sub) => sub.submissionId === submissionId);
-        setSelectedSubmission(submission);
-        setCopySuccess('');
-    };
+    const submission = submissions.find((sub) => sub.submissionId === submissionId);
+    setSelectedSubmission(submission);
+    setCopySuccess('');
+  };
 
-    const closeCodeModal = () => {
-        setSelectedSubmission(null);
-    };
+  const closeCodeModal = () => {
+    setSelectedSubmission(null);
+  };
 
-    const copyToClipboard = async () => {
-        if (selectedSubmission && selectedSubmission.sourceCode) {
-            try {
-                await navigator.clipboard.writeText(selectedSubmission.sourceCode);
-                setCopySuccess('Скопировано!');
-                setTimeout(() => setCopySuccess(''), 2000);
-            } catch (err) {
-                console.error('Не удалось скопировать код:', err);
-                setCopySuccess('Ошибка');
-            }
-        }
-    };
+  const copyToClipboard = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopySuccess('Скопировано!');
+      setTimeout(() => setCopySuccess(''), 2000);
+    } catch (err) {
+      console.error('Не удалось скопировать текст:', err);
+      setCopySuccess('Ошибка');
+    }
+  };
 
   if (loading) {
-    return <Container>Загрузка деталей задачи...</Container>;
+    return (
+      <Container>Загрузка деталей задачи...</Container>
+    );
   }
 
   if (error) {
-    return <Container>Ошибка: {error}</Container>;
+    return (
+      <Container>Ошибка: {error}</Container>
+    );
   }
 
   if (!problem) {
@@ -426,14 +447,16 @@ function ProblemDetailsPage() {
     <Container>
       <div style={{ display: 'flex', flexDirection: 'column', flex: 1, marginRight: '5px' }}>
         <LanguageSelector value={selectedLanguage} onChange={handleLanguageChange}>
-          {LANGUAGES.map(lang => (
-            <option key={lang.value} value={lang.value}>{lang.label}</option>
+          {LANGUAGES.map((lang) => (
+            <option key={lang.value} value={lang.value}>
+              {lang.label}
+            </option>
           ))}
         </LanguageSelector>
         <FileInput
           type="file"
           onChange={handleFileChange}
-          accept={LANGUAGES.find(lang => lang.value === selectedLanguage)?.extension}
+          accept={LANGUAGES.find((lang) => lang.value === selectedLanguage)?.extension}
           ref={fileInputRef}
         />
         <div style={{ height: '600px', overflowY: 'auto', marginBottom: '0.5rem' }}>
@@ -465,7 +488,7 @@ function ProblemDetailsPage() {
                 </tr>
               </thead>
               <tbody>
-                {submissions.map(submission => (
+                {submissions.map((submission) => (
                   <tr key={submission.submissionId} style={{ borderBottom: '1px solid #333' }}>
                     <td style={{ padding: '0.5rem' }}>
                       <SubmissionIdLink onClick={() => openCodeModal(submission.submissionId)}>
@@ -477,8 +500,12 @@ function ProblemDetailsPage() {
                     </td>
                     <td style={{ padding: '0.5rem' }}>{submission.status}</td>
                     <td style={{ padding: '0.5rem' }}>{submission.time !== null ? `${submission.time} мс` : '-'}</td>
-                    <td style={{ padding: '0.5rem' }}>{submission.memory !== null ? `${submission.memory} КБ` : '-'}</td>
-                    <td style={{ padding: '0.5rem' }}>{submission.numberOfTestcase !== null ? submission.numberOfTestcase : '-'}</td>
+                    <td style={{ padding: '0.5rem' }}>
+                      {submission.memory !== null ? `${submission.memory} КБ` : '-'}
+                    </td>
+                    <td style={{ padding: '0.5rem' }}>
+                      {submission.numberOfTestcase !== null ? submission.numberOfTestcase : '-'}
+                    </td>
                     <td style={{ padding: '0.5rem' }}>{new Date(submission.created).toLocaleString()}</td>
                   </tr>
                 ))}
@@ -494,26 +521,53 @@ function ProblemDetailsPage() {
       <ProblemInfoContainer>
         <ProblemTitle>{problem.title}</ProblemTitle>
         <InfoItem>
-          Сложность:
           <Difficulty difficulty={problem.problemDifficulty}>
             {problem.problemDifficulty === 'EASY' && 'Легкая'}
             {problem.problemDifficulty === 'MEDIUM' && 'Средняя'}
             {problem.problemDifficulty === 'HARD' && 'Сложная'}
-            {problem.problemDifficulty !== 'EASY' && problem.problemDifficulty !== 'MEDIUM' && problem.problemDifficulty !== 'HARD' && problem.problemDifficulty}
+            {problem.problemDifficulty !== 'EASY' &&
+              problem.problemDifficulty !== 'MEDIUM' &&
+              problem.problemDifficulty !== 'HARD' &&
+              problem.problemDifficulty}
           </Difficulty>
         </InfoItem>
         <InfoItem>Ограничение по времени: {problem.timeLimit} сек.</InfoItem>
         <InfoItem>Ограничение по памяти: {problem.memoryLimit} КБ</InfoItem>
         <div>
           <h3>Описание задачи:</h3>
-          <Text>{problem.text}</Text>
+          <HTMLContent dangerouslySetInnerHTML={{ __html: problem.text }} />
         </div>
         <InputOutputFormat>
           <FormatTitle>Формат ввода</FormatTitle>
-          <Text>{problem.inputFormat}</Text>
+          <HTMLContent dangerouslySetInnerHTML={{ __html: problem.inputFormat }} />
           <FormatTitle>Формат вывода</FormatTitle>
-          <Text>{problem.outputFormat}</Text>
+          <HTMLContent dangerouslySetInnerHTML={{ __html: problem.outputFormat }} />
         </InputOutputFormat>
+        {problem.testcases && problem.testcases.length > 0 && (
+          <div style={{ marginTop: '1rem' }}>
+            <FormatTitle>Примеры тестов</FormatTitle>
+            {problem.testcases.map((testcase, index) => (
+              <div key={testcase.testcaseId} style={{ marginBottom: '1rem', backgroundColor: '#444', padding: '1rem', borderRadius: '5px' }}>
+                <p>
+                  <strong>Тест {index + 1}:</strong>
+                </p>
+                <p>
+                  <strong>Ввод:</strong>
+                  <CodeBlock>
+                    {testcase.input}
+                    <CopyButton onClick={() => copyToClipboard(testcase.input)} title={copySuccess || 'Копировать'}>
+                      <FontAwesomeIcon icon={faClipboard} />
+                    </CopyButton>
+                  </CodeBlock>
+                </p>
+                <p>
+                  <strong>Вывод:</strong>
+                  <CodeBlock>{testcase.output}</CodeBlock>
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
       </ProblemInfoContainer>
 
       {selectedSubmission && (
@@ -521,21 +575,40 @@ function ProblemDetailsPage() {
           <Modal onClick={(e) => e.stopPropagation()}>
             <ModalTitle>Код решения</ModalTitle>
             <CloseButton onClick={closeCodeModal}>&times;</CloseButton>
-            <p><strong>ID задачи:</strong> {selectedSubmission.problemId || 'N/A'}</p>
-            <p><strong>ID отправки:</strong> {selectedSubmission.submissionId}</p>
-            <p><strong>Пользователь:</strong> {selectedSubmission.username || 'N/A'}</p>
-            <p><strong>Язык:</strong> {compilerIdToLanguage[selectedSubmission.compilerId] || 'N/A'}</p>
-            <p><strong>Статус:</strong> {selectedSubmission.status}</p>
-            <p><strong>Время (сек):</strong> {selectedSubmission.time !== null ? selectedSubmission.time.toFixed(3) : 'N/A'}</p>
-            <p><strong>Память (КБ):</strong> {selectedSubmission.memory !== null ? selectedSubmission.memory.toFixed(0) : 'N/A'}</p>
+            <p>
+              <strong>ID задачи:</strong> {selectedSubmission.problemId || 'N/A'}
+            </p>
+            <p>
+              <strong>ID отправки:</strong> {selectedSubmission.submissionId}
+            </p>
+            <p>
+              <strong>Пользователь:</strong> {selectedSubmission.username || 'N/A'}
+            </p>
+            <p>
+              <strong>Язык:</strong> {compilerIdToLanguage[selectedSubmission.compilerId] || 'N/A'}
+            </p>
+            <p>
+              <strong>Статус:</strong> {selectedSubmission.status}
+            </p>
+            <p>
+              <strong>Время (сек):</strong> {selectedSubmission.time !== null ? selectedSubmission.time.toFixed(3) : 'N/A'}
+            </p>
+            <p>
+              <strong>Память (КБ):</strong> {selectedSubmission.memory !== null ? selectedSubmission.memory.toFixed(0) : 'N/A'}
+            </p>
             {selectedSubmission.numberOfTestcase !== null && (
-              <p><strong>Результаты тестирования:</strong> {selectedSubmission.status === 'ACCEPTED' ? 'Все тесты пройдены' : `Тест #${selectedSubmission.numberOfTestcase} завершился с ошибкой`}</p>
+              <p>
+                <strong>Результаты тестирования:</strong>{' '}
+                {selectedSubmission.status === 'ACCEPTED'
+                  ? 'Все тесты пройдены'
+                  : `Тест #${selectedSubmission.numberOfTestcase} завершился с ошибкой`}
+              </p>
             )}
             <div>
               <strong>Исходный код:</strong>
               <CodeBlock>
                 {selectedSubmission.sourceCode}
-                <CopyButton onClick={copyToClipboard} title={copySuccess || 'Копировать'}>
+                <CopyButton onClick={() => copyToClipboard(selectedSubmission.sourceCode)} title={copySuccess || 'Копировать'}>
                   <FontAwesomeIcon icon={faClipboard} />
                 </CopyButton>
               </CodeBlock>

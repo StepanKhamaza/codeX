@@ -28,7 +28,7 @@ public class Submission implements Serializable {
     @Column(nullable = false, name = "username")
     private String username;
 
-    @Column(nullable = false, name = "source_code", columnDefinition = "text", length = 5000)
+    @Column(nullable = false, name = "source_code", columnDefinition = "text")
     private String sourceCode;
 
     @Column(nullable = false, name = "compiler_id")
