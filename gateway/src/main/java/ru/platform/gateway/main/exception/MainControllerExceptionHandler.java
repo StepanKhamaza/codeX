@@ -9,14 +9,16 @@ import ru.platform.gateway.security.dto.AuthenticationResponse;
 @ControllerAdvice(basePackages = "ru.platform.gateway.main")
 public class MainControllerExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<AuthenticationResponse> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
+    public ResponseEntity<AuthenticationResponse> handleMethodArgumentNotValidException(
+            MethodArgumentNotValidException ex) {
+
         return ResponseEntity
                 .badRequest()
                 .body(AuthenticationResponse
                         .builder()
                         .error(ex.getBindingResult()
                                 .getAllErrors()
-                                .get(0)
+                                .getFirst()
                                 .getDefaultMessage())
                         .build()
                 );

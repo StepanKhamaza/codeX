@@ -1,34 +1,32 @@
 package ru.platform.gateway.main.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.platform.gateway.main.entities.Problem;
+import ru.platform.gateway.main.entities.Testcase;
 import ru.platform.gateway.main.repository.ProblemRepository;
 
 import java.util.List;
 
 @Service
+@Slf4j
 public class ProblemService {
     private final ProblemRepository problemRepository;
-    private final TestcaseService testcaseService;
 
-    public ProblemService(ProblemRepository problemRepository, TestcaseService testcaseService) {
+    public ProblemService(ProblemRepository problemRepository) {
         this.problemRepository = problemRepository;
-        this.testcaseService = testcaseService;
     }
 
     @Transactional
     public void saveProblem(Problem problem) {
+        List<Testcase> testcases = problem.getTestcases();
+        testcases.forEach(testcase -> testcase.setProblem(problem));
+
         try {
             problemRepository.save(problem);
         } catch (Exception e) {
             throw new RuntimeException("Problem save failed", e);
-        }
-
-        try {
-            testcaseService.saveTestcases(problem.getTestcases());
-        } catch (Exception e) {
-            throw new RuntimeException("Testcases for problem %s save failed".formatted(problem.getProblemId()), e);
         }
     }
 

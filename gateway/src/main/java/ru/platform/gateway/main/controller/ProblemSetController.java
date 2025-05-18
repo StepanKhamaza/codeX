@@ -26,6 +26,9 @@ public class ProblemSetController {
     @GetMapping
     public ResponseEntity<Map<String, Object>> getAllProblems() {
         List<Problem> problems = problemService.getAllProblems();
+        problems.forEach(problem -> {
+            problem.setTestcases(null);
+        });
         Integer totalCount = problems.size();
 
         return ResponseEntity

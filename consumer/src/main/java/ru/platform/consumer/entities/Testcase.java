@@ -27,9 +27,9 @@ public class Testcase implements Serializable {
     @JsonIgnore
     private Problem problem;
 
-    @Column
+    @Column(columnDefinition = "text")
     private String input;
 
-    @Column
+    @Column(columnDefinition = "text")
     private String output;
 }

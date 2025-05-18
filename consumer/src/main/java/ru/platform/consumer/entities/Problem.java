@@ -26,13 +26,13 @@ public class Problem implements Serializable {
     @Column(nullable = false)
     private String title;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "text")
     private String text;
 
-    @Column(nullable = false, name = "input_format")
+    @Column(nullable = false, name = "input_format", columnDefinition = "text")
     private String inputFormat;
 
-    @Column(nullable = false, name = "output_format")
+    @Column(nullable = false, name = "output_format", columnDefinition = "text")
     private String outputFormat;
 
     @Enumerated(EnumType.STRING)

@@ -14,19 +14,19 @@ import java.util.List;
 @Getter
 @NoArgsConstructor
 public class ProblemRequest {
-    @Size(min = 5, max = 50, message = "Название задачи должно содержать от 5 до 50 символов")
+    @Size(min = 5, message = "Название задачи должно содержать минимум 5 символов")
     @NotBlank(message = "Название задачи не должно быть пустым")
     private String title;
 
-    @Size(min = 5, max = 15000, message = "Описание задачи должно содержать от 5 до 15000 символов")
+    @Size(min = 5, message = "Описание задачи должно содержать минимум 5 символов")
     @NotBlank(message = "Название задачи не должно быть пустым")
     private String text;
 
-    @Size(min = 5, max = 1000, message = "Формат входных данных должен содержать от 5 до 1000 символов")
+    @Size(min = 5, message = "Формат входных данных должен содержать минимум 5 символов")
     @NotBlank(message = "Формат входных данных не должен быть пустым")
     private String inputFormat;
 
-    @Size(min = 5, max = 1000, message = "Формат выходных данных должен содержать от 5 до 1000 символов")
+    @Size(min = 5, message = "Формат выходных данных должен содержать минимум 5 символов")
     @NotBlank(message = "Формат выходных данных не должен быть пустым")
     private String outputFormat;
 
