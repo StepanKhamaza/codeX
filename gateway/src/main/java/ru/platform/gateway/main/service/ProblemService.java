@@ -1,6 +1,9 @@
 package ru.platform.gateway.main.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.platform.gateway.main.entities.Problem;
@@ -35,6 +38,17 @@ public class ProblemService {
             return problemRepository.findAll();
         } catch (Exception e) {
             throw new RuntimeException("Problems get all failed", e);
+        }
+    }
+
+    public Page<Problem> getAllWithoutTestcases(Integer page, Integer limit) {
+        try {
+            return problemRepository
+                    .findAllWithoutTestcasesOrderByProblemId(
+                            PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "problemId"))
+                    );
+        } catch (Exception e) {
+            throw new RuntimeException("Problems get all titles failed", e);
         }
     }
 

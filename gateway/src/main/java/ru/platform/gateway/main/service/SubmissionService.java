@@ -1,5 +1,7 @@
 package ru.platform.gateway.main.service;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import ru.platform.gateway.main.entities.Submission;
 import ru.platform.gateway.main.repository.SubmissionRepository;
@@ -16,10 +18,8 @@ public class SubmissionService {
         this.submissionRepository = submissionRepository;
     }
 
-    public List<Submission> getAllSubmissions() {
-        return submissionRepository
-                .findAllByOrderByCreatedDesc()
-                .orElseThrow();
+    public Page<Submission> getAllSubmissions(Integer page, Integer limit) {
+        return submissionRepository.findAllByOrderByCreatedDesc(PageRequest.of(page, limit));
     }
 
     public void saveSubmission(Submission submission) {

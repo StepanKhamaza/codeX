@@ -1,6 +1,7 @@
 package ru.platform.gateway.main.controller;
 
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -41,10 +42,13 @@ public class SubmissionController {
     }
 
     @GetMapping("/get-all")
-    public ResponseEntity<Map<String, List<Submission>>> getAllSubmissions() {
+    public ResponseEntity<Page<Submission>> getAllSubmissions(
+            @RequestParam(value = "page", defaultValue = "0") Integer page,
+            @RequestParam(value = "limit", defaultValue = "50") Integer limit) {
+        Page<Submission> submissions = submissionService.getAllSubmissions(page, limit);
         return ResponseEntity
                 .ok()
-                .body(Map.of("submissions", submissionService.getAllSubmissions()));
+                .body(submissions);
     }
 
     @GetMapping("/get/{username}")
