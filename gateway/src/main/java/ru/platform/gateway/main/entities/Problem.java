@@ -49,12 +49,33 @@ public class Problem implements Serializable {
     private LocalDateTime created;
 
     @Column(nullable = false)
-    @OneToMany(fetch = FetchType.EAGER,
+    @OneToMany(fetch = FetchType.LAZY,
             cascade = CascadeType.ALL,
             orphanRemoval = true,
             mappedBy = "problem"
     )
     private List<Testcase> testcases = new ArrayList<>();
+
+    public Problem(Long problemId,
+                   String title,
+                   String text,
+                   String inputFormat,
+                   String outputFormat,
+                   ProblemDifficulty problemDifficulty,
+                   Float timeLimit,
+                   Float memoryLimit,
+                   LocalDateTime created) {
+
+        this.problemId = problemId;
+        this.title = title;
+        this.text = text;
+        this.inputFormat = inputFormat;
+        this.outputFormat = outputFormat;
+        this.problemDifficulty = problemDifficulty;
+        this.timeLimit = timeLimit;
+        this.memoryLimit = memoryLimit;
+        this.created = created;
+    }
 
     public void addTestcase(Testcase testcase) {
         testcases.add(testcase);

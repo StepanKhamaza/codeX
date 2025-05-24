@@ -1,6 +1,7 @@
 package ru.platform.gateway.main.controller;
 
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.platform.gateway.main.dto.ProblemRequest;
@@ -11,7 +12,6 @@ import ru.platform.gateway.main.service.ProblemService;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 
 @RestController
@@ -24,16 +24,14 @@ public class ProblemSetController {
     }
 
     @GetMapping
-    public ResponseEntity<Map<String, Object>> getAllProblems() {
-        List<Problem> problems = problemService.getAllProblems();
-        problems.forEach(problem -> {
-            problem.setTestcases(null);
-        });
-        Integer totalCount = problems.size();
+    public ResponseEntity<Page<Problem>> getAllProblems(
+            @RequestParam(value = "page", defaultValue = "0") Integer page,
+            @RequestParam(value = "limit", defaultValue = "10") Integer limit) {
 
+        Page<Problem> problems = problemService.getAllWithoutTestcases(page, limit);
         return ResponseEntity
                 .ok()
-                .body(Map.of("problems", problems, "totalCount", totalCount));
+                .body(problems);
     }
 
     @PostMapping("/add-problem")

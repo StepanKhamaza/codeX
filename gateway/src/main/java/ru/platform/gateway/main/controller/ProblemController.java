@@ -24,7 +24,7 @@ public class ProblemController {
         problem.setTestcases(problem
                 .getTestcases()
                 .stream()
-                .limit(3)
+                .limit(2)
                 .collect(Collectors.toList())
         );
 

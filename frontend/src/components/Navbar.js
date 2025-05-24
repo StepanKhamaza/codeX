@@ -175,6 +175,7 @@ function Navbar({ onAuthChange }) {
             <>
               {role && <RoleDisplay>{role === 'ROLE_ADMIN' ? 'Админ' : ''}</RoleDisplay>}
               <ProfileIcon>👤</ProfileIcon>
+              {localStorage.getItem('username')}
               <LogoutButton onClick={handleLogout}>Выйти</LogoutButton>
             </>
           ) : (

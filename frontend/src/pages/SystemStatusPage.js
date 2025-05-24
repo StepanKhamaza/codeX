@@ -3,7 +3,7 @@ import axios from 'axios';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faClipboard } from '@fortawesome/free-solid-svg-icons';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 
 const Container = styled.div`
   padding: 2rem;
@@ -177,6 +177,21 @@ const CopyButton = styled.button`
   }
 `;
 
+const CopyNotification = styled.div`
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #4CAF50; /* Green background */
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  z-index: 1001; /* Above modals */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  opacity: ${(props) => (props.show ? 1 : 0)};
+  transition: opacity 0.5s ease-in-out;
+`;
+
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 const SUBMISSIONS_PER_PAGE = 50;
 
@@ -189,13 +204,16 @@ const compilerIdToLanguage = {
 
 function SystemStatusPage({ isAuthenticated }) {
   const [submissions, setSubmissions] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalSubmissions, setTotalSubmissions] = useState(0);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedSubmission, setSelectedSubmission] = useState(null);
-  const [copySuccess, setCopySuccess] = useState('');
+  const [copySuccessMessage, setCopySuccessMessage] = useState('');
+
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -203,18 +221,27 @@ function SystemStatusPage({ isAuthenticated }) {
       return;
     }
 
+    const queryParams = new URLSearchParams(location.search);
+    const page = parseInt(queryParams.get('page') || '0', 10);
+    if (page !== currentPage) {
+      setCurrentPage(page);
+    }
+  }, [isAuthenticated, navigate, location.search]);
+
+  useEffect(() => {
     const fetchSubmissions = async () => {
       setLoading(true);
       setError(null);
       try {
         const token = localStorage.getItem('jwtToken');
-        const response = await axios.get(`${API_BASE_URL}/submission/get-all`, {
+        const response = await axios.get(`${API_BASE_URL}/submission/get-all?page=${currentPage}&limit=${SUBMISSIONS_PER_PAGE}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
         });
-        setSubmissions(response.data.submissions);
-        setTotalSubmissions(response.data.submissions.length);
+        setSubmissions(response.data.content);
+        setTotalElements(response.data.totalElements);
+        setTotalPages(response.data.totalPages);
       } catch (err) {
         console.error('Ошибка при загрузке отправленных решений:', err);
         setError(err.message || 'Не удалось загрузить отправленные решения.');
@@ -224,21 +251,17 @@ function SystemStatusPage({ isAuthenticated }) {
     };
 
     fetchSubmissions();
-  }, [isAuthenticated, navigate]);
-
-  const startIndex = (currentPage - 1) * SUBMISSIONS_PER_PAGE;
-  const endIndex = startIndex + SUBMISSIONS_PER_PAGE;
-  const currentSubmissions = submissions.slice(startIndex, endIndex);
-  const totalPages = Math.ceil(totalSubmissions / SUBMISSIONS_PER_PAGE);
+  }, [currentPage, isAuthenticated, API_BASE_URL]);
 
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
+    navigate(`?page=${newPage}`);
   };
 
   const openCodeModal = (submissionId) => {
     const submission = submissions.find((sub) => sub.submissionId === submissionId);
     setSelectedSubmission(submission);
-    setCopySuccess('');
+    setCopySuccessMessage('');
   };
 
   const closeCodeModal = () => {
@@ -249,27 +272,27 @@ function SystemStatusPage({ isAuthenticated }) {
     if (selectedSubmission && selectedSubmission.sourceCode) {
       try {
         await navigator.clipboard.writeText(selectedSubmission.sourceCode);
-        setCopySuccess('Скопировано!');
-        setTimeout(() => setCopySuccess(''), 2000);
+        setCopySuccessMessage('Скопировано!');
+        setTimeout(() => setCopySuccessMessage(''), 2000);
       } catch (err) {
         console.error('Не удалось скопировать код:', err);
-        setCopySuccess('Ошибка');
+        setCopySuccessMessage('Ошибка');
       }
     }
   };
 
   if (loading) {
-    return <div>Загрузка состояния системы...</div>;
+    return <Container>Загрузка состояния системы...</Container>;
   }
 
   if (error) {
-    return <div>Ошибка загрузки состояния системы: {error}</div>;
+    return <Container>Ошибка загрузки состояния системы: {error}</Container>;
   }
 
   return (
     <Container>
       <Title>Состояние системы</Title>
-      {currentSubmissions.length > 0 ? (
+      {submissions.length > 0 ? (
         <>
           <Table>
             <TableHead>
@@ -286,7 +309,7 @@ function SystemStatusPage({ isAuthenticated }) {
               </tr>
             </TableHead>
             <TableBody>
-              {currentSubmissions.map((submission) => (
+              {submissions.map((submission) => (
                 <TableRow key={submission.submissionId}>
                   <TableCell>
                     <SubmissionIdLink onClick={() => openCodeModal(submission.submissionId)}>
@@ -313,32 +336,31 @@ function SystemStatusPage({ isAuthenticated }) {
             <Pagination>
               <PageButton
                 onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
+                disabled={currentPage === 0}
               >
                 Назад
               </PageButton>
-              {/* Dynamic page buttons */}
               {(() => {
                 const buttons = [];
                 const maxButtons = 5;
-                let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
-                let endPage = Math.min(totalPages, currentPage + Math.ceil(maxButtons / 2) - 1);
+                let startPage = Math.max(0, currentPage - Math.floor(maxButtons / 2));
+                let endPage = Math.min(totalPages - 1, currentPage + Math.ceil(maxButtons / 2) - 1);
 
                 if (endPage - startPage + 1 < maxButtons) {
-                  if (startPage === 1) {
-                    endPage = Math.min(totalPages, maxButtons);
+                  if (startPage === 0) {
+                    endPage = Math.min(totalPages - 1, maxButtons - 1);
                   } else {
-                    startPage = Math.max(1, totalPages - maxButtons + 1);
+                    startPage = Math.max(0, totalPages - maxButtons);
                   }
                 }
 
-                if (startPage > 1) {
+                if (startPage > 0) {
                   buttons.push(
-                    <PageButton key={1} onClick={() => handlePageChange(1)}>
+                    <PageButton key={0} onClick={() => handlePageChange(0)}>
                       1
                     </PageButton>
                   );
-                  if (startPage > 2) {
+                  if (startPage > 1) {
                     buttons.push(<span key="start-ellipsis" style={{ margin: '0 0.25rem' }}>...</span>);
                   }
                 }
@@ -351,17 +373,17 @@ function SystemStatusPage({ isAuthenticated }) {
                       aria-current={currentPage === i ? 'page' : undefined}
                       style={{ fontWeight: currentPage === i ? 'bold' : 'normal' }}
                     >
-                      {i}
+                      {i + 1}
                     </PageButton>
                   );
                 }
 
-                if (endPage < totalPages) {
-                  if (endPage < totalPages - 1) {
+                if (endPage < totalPages - 1) {
+                  if (endPage < totalPages - 2) {
                     buttons.push(<span key="end-ellipsis" style={{ margin: '0 0.25rem' }}>...</span>);
                   }
                   buttons.push(
-                    <PageButton key={totalPages} onClick={() => handlePageChange(totalPages)}>
+                    <PageButton key={totalPages - 1} onClick={() => handlePageChange(totalPages - 1)}>
                       {totalPages}
                     </PageButton>
                   );
@@ -370,7 +392,7 @@ function SystemStatusPage({ isAuthenticated }) {
               })()}
               <PageButton
                 onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
+                disabled={currentPage === totalPages - 1}
               >
                 Вперед
               </PageButton>
@@ -400,13 +422,19 @@ function SystemStatusPage({ isAuthenticated }) {
               <strong>Исходный код:</strong>
               <CodeBlock>
                 {selectedSubmission.sourceCode}
-                <CopyButton onClick={copyToClipboard} title={copySuccess || 'Копировать'}>
+                <CopyButton onClick={copyToClipboard} title={copySuccessMessage || 'Копировать'}>
                   <FontAwesomeIcon icon={faClipboard} />
                 </CopyButton>
               </CodeBlock>
             </div>
           </Modal>
         </ModalOverlay>
+      )}
+
+      {copySuccessMessage && (
+        <CopyNotification show={!!copySuccessMessage}>
+          {copySuccessMessage}
+        </CopyNotification>
       )}
     </Container>
   );

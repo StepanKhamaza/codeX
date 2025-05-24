@@ -12,22 +12,32 @@ const Container = styled.div`
   background-color: #111;
   color: #eee;
   min-height: 80vh;
+  gap: 20px;
 `;
 
-const ProblemInfoContainer = styled.div`
-  flex: 1;
-  margin-left: 5px;
+const EditorColumn = styled.div`
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 55%;
+  max-width: 55%;
+  min-width: 400px;
+`;
+
+const ProblemDetailsColumn = styled.div`
+  flex: 0 0 45%;
+  max-width: 45%;
   padding: 1rem;
   background-color: #333;
   border-radius: 5px;
+  overflow-y: auto;
+  min-width: 300px;
 `;
 
 const HTMLContent = styled.div`
   margin-bottom: 1rem;
   color: #eee;
-  /* Add any styling you want for the HTML content */
   & > p {
-    margin-bottom: 0.5rem; /* Example styling for paragraphs */
+    margin-bottom: 0.5rem;
   }
   & > pre {
     background-color: #222;
@@ -36,7 +46,6 @@ const HTMLContent = styled.div`
     overflow-x: auto;
     white-space: pre-wrap;
   }
-  /* Add more styles for other HTML elements as needed */
 `;
 
 const LanguageSelector = styled.select`
@@ -56,11 +65,6 @@ const ProblemTitle = styled.h2`
 
 const InfoItem = styled.p`
   margin-bottom: 0.5rem;
-`;
-
-const Text = styled.p`
-  white-space: pre-wrap;
-  margin-bottom: 1rem;
 `;
 
 const Difficulty = styled.span`
@@ -204,6 +208,21 @@ const SubmissionIdLink = styled.span`
   }
 `;
 
+const CopyNotification = styled.div`
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #4CAF50;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  z-index: 1001;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  opacity: ${(props) => (props.show ? 1 : 0)};
+  transition: opacity 0.5s ease-in-out;
+`;
+
 const LANGUAGES = [
   { value: 'javascript', label: 'JavaScript (Node.js 12.14.0)', extension: '.js' },
   { value: 'cpp', label: 'C++ (GCC 9.2.0)', extension: '.cpp' },
@@ -230,7 +249,16 @@ function ProblemDetailsPage() {
   const fileInputRef = useRef(null);
   const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const [selectedSubmission, setSelectedSubmission] = useState(null);
-  const [copySuccess, setCopySuccess] = useState('');
+  const [copySuccessMessage, setCopySuccessMessage] = useState('');
+  const [messageModal, setMessageModal] = useState({ show: false, message: '' });
+
+  const showMessage = (message) => {
+    setMessageModal({ show: true, message });
+  };
+
+  const closeMessageModal = () => {
+    setMessageModal({ show: false, message: '' });
+  };
 
   const fetchSubmissions = async () => {
     const token = localStorage.getItem('jwtToken');
@@ -326,17 +354,17 @@ function ProblemDetailsPage() {
           const fileContent = await readFileContent(selectedFile);
           sourceCode = fileContent;
         } catch (error) {
-          alert('Не удалось прочитать содержимое файла.');
+          showMessage('Не удалось прочитать содержимое файла.');
           return;
         }
       } else {
-        alert(
+        showMessage(
           `Пожалуйста, выберите файл с расширением "${expectedExtension}" для языка "${selectedLangObject?.label}".`
         );
         return;
       }
     } else if (!sourceCode.trim()) {
-      alert('Пожалуйста, введите код в редакторе или выберите файл.');
+      showMessage('Пожалуйста, введите код в редакторе или выберите файл.');
       return;
     }
 
@@ -354,7 +382,7 @@ function ProblemDetailsPage() {
         selectedCompilerId = 71;
         break;
       default:
-        alert('Выбранный язык не поддерживается для отправки.');
+        showMessage('Выбранный язык не поддерживается для отправки.');
         return;
     }
 
@@ -374,7 +402,7 @@ function ProblemDetailsPage() {
             'Authorization': `Bearer ${token}`,
           },
         });
-        alert(`Решение успешно отправлено!`);
+        showMessage(`Решение успешно отправлено!`);
         console.log(` Решение отправлено (${submissionType})!`);
 
         fetchSubmissions();
@@ -385,11 +413,11 @@ function ProblemDetailsPage() {
         }
       } catch (error) {
         console.error('Ошибка при отправке решения:', error);
-        alert('Произошла ошибка при отправке решения.');
+        showMessage('Произошла ошибка при отправке решения.');
       }
     } else {
       console.error('API Base URL не определен.');
-      alert('API Base URL не определен.');
+      showMessage('API Base URL не определен.');
     }
   };
 
@@ -409,7 +437,7 @@ function ProblemDetailsPage() {
   const openCodeModal = (submissionId) => {
     const submission = submissions.find((sub) => sub.submissionId === submissionId);
     setSelectedSubmission(submission);
-    setCopySuccess('');
+    setCopySuccessMessage('');
   };
 
   const closeCodeModal = () => {
@@ -419,11 +447,11 @@ function ProblemDetailsPage() {
   const copyToClipboard = async (text) => {
     try {
       await navigator.clipboard.writeText(text);
-      setCopySuccess('Скопировано!');
-      setTimeout(() => setCopySuccess(''), 2000);
+      setCopySuccessMessage('Скопировано!');
+      setTimeout(() => setCopySuccessMessage(''), 2000);
     } catch (err) {
       console.error('Не удалось скопировать текст:', err);
-      setCopySuccess('Ошибка');
+      setCopySuccessMessage('Ошибка');
     }
   };
 
@@ -445,7 +473,7 @@ function ProblemDetailsPage() {
 
   return (
     <Container>
-      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, marginRight: '5px' }}>
+      <EditorColumn>
         <LanguageSelector value={selectedLanguage} onChange={handleLanguageChange}>
           {LANGUAGES.map((lang) => (
             <option key={lang.value} value={lang.value}>
@@ -517,8 +545,8 @@ function ProblemDetailsPage() {
         {submissions.length === 0 && !loading && (
           <p style={{ marginTop: '1rem' }}>Предыдущих попыток не найдено.</p>
         )}
-      </div>
-      <ProblemInfoContainer>
+      </EditorColumn>
+      <ProblemDetailsColumn>
         <ProblemTitle>{problem.title}</ProblemTitle>
         <InfoItem>
           <Difficulty difficulty={problem.problemDifficulty}>
@@ -555,7 +583,7 @@ function ProblemDetailsPage() {
                   <strong>Ввод:</strong>
                   <CodeBlock>
                     {testcase.input}
-                    <CopyButton onClick={() => copyToClipboard(testcase.input)} title={copySuccess || 'Копировать'}>
+                    <CopyButton onClick={() => copyToClipboard(testcase.input)} title={copySuccessMessage || 'Копировать'}>
                       <FontAwesomeIcon icon={faClipboard} />
                     </CopyButton>
                   </CodeBlock>
@@ -568,7 +596,7 @@ function ProblemDetailsPage() {
             ))}
           </div>
         )}
-      </ProblemInfoContainer>
+      </ProblemDetailsColumn>
 
       {selectedSubmission && (
         <ModalOverlay onClick={closeCodeModal}>
@@ -608,13 +636,29 @@ function ProblemDetailsPage() {
               <strong>Исходный код:</strong>
               <CodeBlock>
                 {selectedSubmission.sourceCode}
-                <CopyButton onClick={() => copyToClipboard(selectedSubmission.sourceCode)} title={copySuccess || 'Копировать'}>
+                <CopyButton onClick={() => copyToClipboard(selectedSubmission.sourceCode)} title={copySuccessMessage || 'Копировать'}>
                   <FontAwesomeIcon icon={faClipboard} />
                 </CopyButton>
               </CodeBlock>
             </div>
           </Modal>
         </ModalOverlay>
+      )}
+
+      {messageModal.show && (
+        <ModalOverlay onClick={closeMessageModal}>
+          <Modal onClick={(e) => e.stopPropagation()}>
+            <ModalTitle>Уведомление</ModalTitle>
+            <CloseButton onClick={closeMessageModal}>&times;</CloseButton>
+            <p>{messageModal.message}</p>
+          </Modal>
+        </ModalOverlay>
+      )}
+
+      {copySuccessMessage && (
+        <CopyNotification show={!!copySuccessMessage}>
+          {copySuccessMessage}
+        </CopyNotification>
       )}
     </Container>
   );

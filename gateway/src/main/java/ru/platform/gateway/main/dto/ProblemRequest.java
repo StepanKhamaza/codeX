@@ -14,7 +14,7 @@ import java.util.List;
 @Getter
 @NoArgsConstructor
 public class ProblemRequest {
-    @Size(min = 5, message = "Название задачи должно содержать минимум 5 символов")
+    @Size(min = 3, message = "Название задачи должно содержать минимум 5 символов")
     @NotBlank(message = "Название задачи не должно быть пустым")
     private String title;
 
